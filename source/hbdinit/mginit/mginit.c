@@ -68,7 +68,7 @@ static void on_new_del_client (int op, int cli)
     else
         _ERR_PRINTF ("Serious error: incorrect operations.\n");
 
-    if (nr_clients > 0 && (hLoadingWnd != HWND_INVALID)) {
+    if ((hLoadingWnd != HWND_INVALID) && nr_clients > 0) {
         SendMessage(hLoadingWnd, MSG_CLOSE, 0, 0);
     }
 }

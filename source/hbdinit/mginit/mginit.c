@@ -47,6 +47,8 @@
 static BOOL quit = FALSE;
 static int nr_clients = 0;
 
+HWND hLoadingWnd = HWND_INVALID;
+
 static void on_new_del_client (int op, int cli)
 {
     if (op == LCO_NEW_CLIENT) {
@@ -65,6 +67,10 @@ static void on_new_del_client (int op, int cli)
     }
     else
         _ERR_PRINTF ("Serious error: incorrect operations.\n");
+
+    if (nr_clients > 0 && (hLoadingWnd != HWND_INVALID)) {
+        SendMessage(hLoadingWnd, MSG_CLOSE, 0, 0);
+    }
 }
 
 static pid_t exec_app (const char* file_name, const char* app_name)
@@ -140,8 +146,71 @@ static void child_wait (int sig)
     }
 }
 
+static void InitLoadingGUI (void)
+{
+}
+
+static void TermLoadingGUI (void)
+{
+}
+
+static void OnLoadingPaint (HWND hWnd, HDC hdc)
+{
+    RECT rc;
+    GetWindowRect(hWnd, &rc);
+    SetBrushColor(hdc, PIXEL_lightwhite);
+    FillBox(hdc, 0, 0, RECTW(rc), RECTH(rc));
+}
+
+static LRESULT LoadingGUIWinProc (HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
+{
+    HDC hdc;
+
+    switch (message) {
+        case MSG_CREATE:
+            InitLoadingGUI ();
+        break;
+
+        case MSG_PAINT:
+            hdc = BeginPaint (hWnd);
+            OnLoadingPaint (hWnd, hdc);
+            EndPaint (hWnd, hdc);
+        return 0;
+
+        case MSG_CLOSE:
+            hLoadingWnd = HWND_INVALID;
+            TermLoadingGUI ();
+            DestroyMainWindow (hWnd);
+        return 0;
+    }
+
+    return DefaultMainWinProc(hWnd, message, wParam, lParam);
+}
+
+void InitCreateInfo (PMAINWINCREATE pCreateInfo)
+{
+    RECT rc = GetScreenRect();
+
+    pCreateInfo->dwStyle = WS_VISIBLE;
+    pCreateInfo->dwExStyle = 0;
+    pCreateInfo->spCaption = "abcdefg";
+    pCreateInfo->hMenu = 0;
+    pCreateInfo->hCursor = 0;
+    pCreateInfo->hIcon = 0;
+    pCreateInfo->MainWindowProc = LoadingGUIWinProc;
+    pCreateInfo->lx = 0;
+    pCreateInfo->ty = 0;
+    pCreateInfo->rx = pCreateInfo->lx + RECTW(rc);
+    pCreateInfo->by = pCreateInfo->ty + RECTH(rc);
+    pCreateInfo->iBkColor = COLOR_black;
+    pCreateInfo->dwAddData = 0;
+    pCreateInfo->hHosting = HWND_DESKTOP;
+}
+
 int MiniGUIMain (int argc, const char* argv[])
 {
+    MAINWINCREATE CreateInfo;
+
     MSG msg;
     struct sigaction siga;
 
@@ -163,6 +232,12 @@ int MiniGUIMain (int argc, const char* argv[])
         if (exec_app (argv[1], argv[1]) == 0)
             return 3;
     }
+
+    InitCreateInfo (&CreateInfo);
+
+    hLoadingWnd = CreateMainWindow (&CreateInfo);
+    if (hLoadingWnd == HWND_INVALID)
+        return -1;
 
     old_tick_count = GetTickCount ();
 

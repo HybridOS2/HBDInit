@@ -42,12 +42,23 @@
 #include <minigui/gdi.h>
 #include <minigui/window.h>
 
+#include "hbdinit_features.h"
+
 #ifdef _MGRM_PROCESSES
+
+#define LOGO_CN_IMG        "img/logo-cn.jpg"
+#define LOGO_IMG           "img/logo.jpg"
+#define LOADING_TEXT       "正在启动系统服务…"
 
 static BOOL quit = FALSE;
 static int nr_clients = 0;
 
 HWND hLoadingWnd = HWND_INVALID;
+BITMAP logo_cn;
+PBITMAP p_logo_cn = NULL;
+
+BITMAP logo;
+PBITMAP p_logo = NULL;
 
 static void on_new_del_client (int op, int cli)
 {
@@ -148,10 +159,36 @@ static void child_wait (int sig)
 
 static void InitLoadingGUI (void)
 {
+    const char *hbdinit_assets_dir = getenv("HBDINIT_ASSETS_DIR");
+    if (!hbdinit_assets_dir) {
+        hbdinit_assets_dir = HBDINIT_ASSETS_DIR;
+    }
+
+    char path[PATH_MAX];
+    sprintf(path, "%s/%s",
+            hbdinit_assets_dir ? hbdinit_assets_dir : ".", LOGO_CN_IMG);
+    if (!LoadBitmapFromFile(HDC_SCREEN, &logo_cn, path)) {
+        p_logo_cn = &logo_cn;
+    }
+
+    sprintf(path, "%s/%s",
+            hbdinit_assets_dir ? hbdinit_assets_dir : ".", LOGO_IMG);
+    if (!LoadBitmapFromFile(HDC_SCREEN, &logo, path)) {
+        p_logo = &logo;
+    }
 }
 
 static void TermLoadingGUI (void)
 {
+    if (p_logo_cn) {
+        UnloadBitmap(p_logo_cn);
+        p_logo_cn = NULL;
+    }
+
+    if (p_logo) {
+        UnloadBitmap(p_logo);
+        p_logo = NULL;
+    }
 }
 
 static void OnLoadingPaint (HWND hWnd, HDC hdc)
@@ -159,7 +196,26 @@ static void OnLoadingPaint (HWND hWnd, HDC hdc)
     RECT rc;
     GetWindowRect(hWnd, &rc);
     SetBrushColor(hdc, PIXEL_lightwhite);
-    FillBox(hdc, 0, 0, RECTW(rc), RECTH(rc));
+
+    int w = RECTW(rc);
+    int h = RECTH(rc);
+
+    FillBox(hdc, 0, 0, w, h);
+
+    int dest_h =  h / 6;
+    int dest_w = p_logo->bmWidth  * dest_h / p_logo->bmHeight;
+
+    int x = (w - dest_w)  / 2;
+    int y = h / 8;
+
+    FillBoxWithBitmap(hdc, x, y, dest_w, dest_h, p_logo_cn);
+    FillBoxWithBitmap(hdc, x, y + dest_h, dest_w, dest_h, p_logo);
+
+    y = h  * 3 / 4;
+    RECT rcText = {0, y, w, h};
+    SelectFont(hdc, GetSystemFont(SYSLOGFONT_CAPTION));
+    DrawText (hdc, LOADING_TEXT, -1, &rcText, DT_CENTER | DT_VCENTER | DT_SINGLELINE | DT_NOCLIP);
+
 }
 
 static LRESULT LoadingGUIWinProc (HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)

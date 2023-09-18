@@ -54,7 +54,7 @@ set(IMG_FILES
     "assets/img/logo-cn.jpg"
 )
 
-install(FILES ${IMG_FILES} DESTINATION "${CMAKE_INSTALL_PREFIX}/share/hbd/")
+install(FILES ${IMG_FILES} DESTINATION "${CMAKE_INSTALL_PREFIX}/share/hbd-init/assets/img/")
 
 
 

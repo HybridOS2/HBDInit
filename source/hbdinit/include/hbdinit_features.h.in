@@ -88,6 +88,8 @@ enum hbdinit_feature {
 #define HBDINIT_ENABLE_MQTT                 _HBDINIT_@ENABLE_MQTT@
 #define HBDINIT_ENABLE_SSL                  _HBDINIT_@ENABLE_SSL@
 
+#define HBDINIT_ASSETS_DIR   "@CMAKE_INSTALL_PREFIX@/share/hbd-init/assets"
+
 HBDINIT_EXTERN_C_BEGIN
 
 /**

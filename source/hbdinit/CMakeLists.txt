@@ -47,6 +47,14 @@ set_target_properties(mginit PROPERTIES
 HBDINIT_COMPUTE_SOURCES(mginit)
 HBDINIT_FRAMEWORK(mginit)
 
-install(TARGETS mginit DESTINATION "${HBDINIT_APP_INSTALL_DIR}/sbin/")
+install(TARGETS mginit DESTINATION "${EXEC_INSTALL_DIR}")
+
+set(IMG_FILES
+    "assets/img/logo.jpg"
+    "assets/img/logo-cn.jpg"
+)
+
+install(FILES ${IMG_FILES} DESTINATION "${CMAKE_INSTALL_PREFIX}/share/hbd/")
+
 
 

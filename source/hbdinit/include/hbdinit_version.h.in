@@ -1,0 +1,163 @@
+/**
+ * @file hbdinit_version.h
+ * @author Vincent Wei (https://github.com/VincentWei)
+ * @date 2021/09/18
+ * @brief The version of HBDInit.
+ *
+ * Copyright (C) 2021 FMSoft <https://www.fmsoft.cn>
+ *
+ * This file is a part of HBDInit, which contains the examples of my course:
+ * _the Best Practices of C Language_.
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the “Software”), to
+ * deal in the Software without restriction, including without limitation
+ * the rights to use, copy, modify, merge, publish, distribute, sublicense,
+ * and/or sell copies of the Software, and to permit persons to whom
+ * the Software is furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
+ * ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+ * DEALINGS IN THE SOFTWARE.
+ */
+
+#ifndef HBDINIT_HBDINIT_VERSION_H
+#define HBDINIT_HBDINIT_VERSION_H
+
+#include "hbdinit_macros.h"
+
+/**
+ * HBDINIT_VERSION_MAJOR:
+ *
+ * Like hbdinit_get_major_version(), but from the headers used at
+ * application compile time, rather than from the library linked
+ * against at application run time.
+ *
+ * Since 0.0.1
+ */
+#define HBDINIT_VERSION_MAJOR (@PROJECT_VERSION_MAJOR@)
+
+/**
+ * HBDINIT_VERSION_MINOR:
+ *
+ * Like hbdinit_get_minor_version(), but from the headers used at
+ * application compile time, rather than from the library linked
+ * against at application run time.
+ *
+ * Since 0.0.1
+ */
+#define HBDINIT_VERSION_MINOR (@PROJECT_VERSION_MINOR@)
+
+/**
+ * HBDINIT_VERSION_MICRO:
+ *
+ * Like hbdinit_get_micro_version(), but from the headers used at
+ * application compile time, rather than from the library linked
+ * against at application run time.
+ *
+ * Since 0.0.1
+ */
+#define HBDINIT_VERSION_MICRO (@PROJECT_VERSION_MICRO@)
+
+#define HBDINIT_VERSION_STRING ("@PROJECT_VERSION@")
+
+/**
+ * HBDINIT_CHECK_VERSION:
+ *
+ * @major: major version (e.g. 1 for version 1.2.5)
+ * @minor: minor version (e.g. 2 for version 1.2.5)
+ * @micro: micro version (e.g. 5 for version 1.2.5)
+ *
+ * Returns: %TRUE if the version of the HBDInit header files
+ * is the same as or newer than the passed-in version.
+ *
+ * Since 0.0.1
+ */
+#define HBDINIT_CHECK_VERSION(major, minor, micro) \
+    (HBDINIT_VERSION_MAJOR > (major) || \
+    (HBDINIT_VERSION_MAJOR == (major) && HBDINIT_VERSION_MINOR > (minor)) || \
+    (HBDINIT_VERSION_MAJOR == (major) && HBDINIT_VERSION_MINOR == (minor) && \
+     HBDINIT_VERSION_MICRO >= (micro)))
+
+HBDINIT_EXTERN_C_BEGIN
+
+/**
+ * hbdinit_get_major_version:
+ *
+ * Returns: The major version of HBDInit.
+ *
+ * Since 0.0.1
+ */
+HBDINIT_INLINE int
+hbdinit_get_major_version(void)
+{
+    return HBDINIT_VERSION_MAJOR;
+}
+
+/**
+ * hbdinit_get_minor_version:
+ *
+ * Returns: The minor version of HBDInit.
+ *
+ * Since 0.0.1
+ */
+HBDINIT_INLINE int
+hbdinit_get_minor_version(void)
+{
+    return HBDINIT_VERSION_MINOR;
+}
+
+/**
+ * hbdinit_get_micro_version:
+ *
+ * Returns: The micro version of HBDInit.
+ *
+ * Since 0.0.1
+ */
+HBDINIT_INLINE int
+hbdinit_get_micro_version(void)
+{
+    return HBDINIT_VERSION_MICRO;
+}
+
+/**
+ * hbdinit_get_versions:
+ *
+ * @major: the buffer for major version (nullable).
+ * @minor: the buffer for minor version (nullable).
+ * @micro: the buffer for micro version (nullable).
+ *
+ * Returns: none.
+ *
+ * Since 0.0.1
+ */
+HBDINIT_INLINE void
+hbdinit_get_versions (int *major, int *minor, int *micro) {
+    if (major) *major = HBDINIT_VERSION_MAJOR;
+    if (minor) *minor = HBDINIT_VERSION_MINOR;
+    if (micro) *micro = HBDINIT_VERSION_MICRO;
+}
+
+/**
+ * hbdinit_version_string:
+ *
+ * Returns: the pointer to the HBDInit version string, e.g.,
+ * "1.2.3" for version 1.2.3.
+ *
+ * Since 0.0.1
+ */
+HBDINIT_INLINE const char *
+hbdinit_get_version_string (void) {
+    return HBDINIT_VERSION_STRING;
+}
+
+HBDINIT_EXTERN_C_END
+
+#endif /* not defined HBDINIT_HBDINIT_VERSION_H */

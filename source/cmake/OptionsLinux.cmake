@@ -24,7 +24,7 @@ find_package(OpenSSL 1.1.1)
 find_package(SQLite3 3.10.0)
 find_package(MySQLClient 20.0.0)
 find_package(ZLIB 1.2.0)
-find_package(MiniGUI 5.0.14 REQUIRED)
+find_package(MiniGUI 5.0.14 REQUIRED COMPONENTS mGEff)
 
 if (NOT GLIB_FOUND)
     set(ENABLE_SOCKET_STREAM_DEFAULT OFF)

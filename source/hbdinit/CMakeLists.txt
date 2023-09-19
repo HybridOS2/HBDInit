@@ -36,6 +36,7 @@ HBDINIT_INCLUDE_CONFIG_FILES_IF_EXISTS()
 
 set(mginit_LIBRARIES
     MiniGUI::MiniGUI
+    MiniGUI::mGEff
     "${GLIB_LIBRARIES}"
     -lpthread
 )
@@ -50,8 +51,8 @@ HBDINIT_FRAMEWORK(mginit)
 install(TARGETS mginit DESTINATION "${EXEC_INSTALL_DIR}")
 
 set(IMG_FILES
-    "assets/img/logo.jpg"
-    "assets/img/logo-cn.jpg"
+    "assets/img/wallpaper-bottom.jpg"
+    "assets/img/wallpaper-top.jpg"
 )
 
 install(FILES ${IMG_FILES} DESTINATION "${CMAKE_INSTALL_PREFIX}/share/hbd-init/assets/img/")

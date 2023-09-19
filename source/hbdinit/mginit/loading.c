@@ -203,6 +203,7 @@ static int paintLoading(HDC hdc, int space)
         RECT rcText = {fx, fy, wp_w, fy + 40};
         SetTextColor (hdc, DWORD2Pixel(hdc, RGBA_lightwhite));
         SetBkMode (hdc, BM_TRANSPARENT);
+        SelectFont(hdc, GetSystemFont(SYSLOGFONT_CAPTION));
         DrawText(hdc, LOADING_TEXT, -1, &rcText,
                 DT_CENTER | DT_VCENTER | DT_SINGLELINE | DT_NOCLIP);
 

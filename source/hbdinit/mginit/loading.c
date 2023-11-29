@@ -229,7 +229,7 @@ static void animated_cb(MGEFF_ANIMATION handle, HWND hwnd, int id, int *value)
         return;
     }
 
-    fprintf(stderr, "####> %s:%d:%s animted callback value=%d\n", __FILE__, __LINE__, __func__, *value);
+    //fprintf(stderr, "####> %s:%d:%s animted callback value=%d\n", __FILE__, __LINE__, __func__, *value);
     animationValue = *value;
     UpdateWindow(hwnd, true);
 }

@@ -13,7 +13,7 @@
 /*
 ** mginit.c: A simple server for MiniGUI-Processes runtime mode.
 **
-** Copyright (C) 2003 ~ 2020 FMSoft (http://www.fmsoft.cn).
+** Copyright (C) 2003 ~ 2020, 2023 FMSoft (http://www.fmsoft.cn).
 **
 ** Licensed under the Apache License, Version 2.0 (the "License");
 ** you may not use this file except in compliance with the License.
@@ -49,8 +49,57 @@
 
 #ifdef _MGRM_PROCESSES
 
+// Customer Require Id
+#define FIXED_FORMAT_REQID          (MAX_SYS_REQID + 1)
+#define UNFIXED_FORMAT_REQID        (MAX_SYS_REQID + 2)
+
+// Customer sub require Id
+#define REQ_SUBMIT_STATUSBAR_ZNODE  0   // status bar send znode index to server
+#define REQ_GET_TOPMOST_TITLE       1   // get topmost normal window title
+#define REQ_SUBMIT_TOGGLE           2   // toggle the application
+#define REQ_SHOW_PAGE               3   // show target page
+#define REQ_SUBMIT_TOPMOST          4   // set the window to topmost
+
+// Customer compositor name
+#define MIME_COMPOSITOR         "mine-compositor"
+
+typedef struct tagRequestInfo 
+{
+    int id;                     // sub request ID
+    HWND hWnd;                  // the window handle of the sending window
+    unsigned int iData0;
+    unsigned int iData1;
+    unsigned int iData2;
+    unsigned int iData3;
+} RequestInfo;
+
+typedef struct tagReplyInfo 
+{
+    int id;                     // sub request ID
+    unsigned int iData0;
+    unsigned int request1;
+    unsigned int request2;
+    unsigned int request3;
+} ReplyInfo;
+
+typedef struct tagSysConfig 
+{
+    int iSystemConfigClientID;  // clientID of system manager process
+    int iDyBKGndClientID;       // clientID of dynamic background process
+    int iBrowserClientID;       // clientID of browser process
+    pid_t iSystemConfigPid;     // pid of system manager process
+    pid_t iDyBKGndPid;          // pid of dynamic background process
+    pid_t iBrowserPid;          // pid of browser process
+    int iStatusBarZNode;        // z node index of status bar
+    HWND hWndStatusBar;         // the handle of status bar, it is invlid in sysmgr process
+    int iTopmostClientID;       // topmost client ID of topmost process
+} SysConfig;
+
 static BOOL quit = FALSE;
 static int nr_clients = 0;
+static SysConfig m_SysConfig;
+extern CompositorOps mine_compositor;
+extern void mine_compositor_toggle_state(BOOL toggle);
 
 static void on_new_del_client (int op, int cli)
 {
@@ -95,46 +144,6 @@ static pid_t exec_app (const char* file_name, const char* app_name)
     return pid;
 }
 
-static unsigned int old_tick_count;
-
-static pid_t pid_scrnsaver = 0;
-
-static int my_event_hook (PMSG msg)
-{
-    old_tick_count = GetTickCount ();
-
-    if (pid_scrnsaver) {
-        kill (pid_scrnsaver, SIGINT);
-        ShowCursor (TRUE);
-        pid_scrnsaver = 0;
-    }
-
-    if (msg->message == MSG_KEYDOWN) {
-        switch (msg->wParam) {
-        case SCANCODE_ESCAPE:
-            if (nr_clients == 0) {
-                quit = TRUE;
-            }
-            break;
-
-        case SCANCODE_F1:
-           exec_app ("./edit", "edit");
-           break;
-        case SCANCODE_F2:
-           exec_app ("./timeeditor", "timeeditor");
-           break;
-        case SCANCODE_F3:
-           exec_app ("./propsheet", "propsheet");
-           break;
-        case SCANCODE_F4:
-           exec_app ("./bmpbkgnd", "bmpbkgnd");
-           break;
-    }
-    }
-
-    return HOOK_GOON;
-}
-
 static void child_wait (int sig)
 {
     (void) sig;
@@ -149,6 +158,29 @@ static void child_wait (int sig)
     }
 }
 
+static int fix_format_request(int cli, int clifd, void* buff, size_t len)
+{
+    (void) cli;
+    (void) len;
+    RequestInfo * requestInfo = (RequestInfo *)buff;
+    ReplyInfo replyInfo;
+
+    if(requestInfo->id == REQ_SUBMIT_TOGGLE) {
+        int cur_clientId = 0; 
+        int idx_topmost = 0; 
+
+        // reply client
+        replyInfo.id = REQ_SUBMIT_TOGGLE;
+        replyInfo.iData0 = (int)TRUE;
+        ServerSendReply(clifd, &replyInfo, sizeof(replyInfo));
+
+        idx_topmost = ServerGetTopmostZNodeOfType(NULL, ZOF_TYPE_NORMAL, &cur_clientId); 
+        if(idx_topmost > 0)
+            mine_compositor_toggle_state(TRUE);
+    }
+    return 0;
+}
+
 int MiniGUIMain (int argc, const char* argv[])
 {
     MSG msg;
@@ -159,6 +191,8 @@ int MiniGUIMain (int argc, const char* argv[])
     memset (&siga.sa_mask, 0, sizeof(sigset_t));
     sigaction (SIGCHLD, &siga, NULL);
 
+    memset(&m_SysConfig, 0, sizeof(SysConfig));
+
     OnNewDelClient = on_new_del_client;
 
     if (!ServerStartup (0 , 0 , 0)) {
@@ -166,7 +200,17 @@ int MiniGUIMain (int argc, const char* argv[])
         return 1;
     }
 
-    SetServerEventHook (my_event_hook);
+    // register a compositor
+    if(!ServerRegisterCompositor(MIME_COMPOSITOR, &mine_compositor))
+    {
+        return 4;
+    }
+
+    // register request handler
+    if(!RegisterRequestHandler(FIXED_FORMAT_REQID, fix_format_request))
+    {
+        return 2;
+    }
 
 #ifdef USE_ANIMATION
     mGEffInit();
@@ -185,11 +229,12 @@ int MiniGUIMain (int argc, const char* argv[])
             return 3;
     }
 
-    old_tick_count = GetTickCount ();
-
     while (!quit && GetMessage (&msg, HWND_DESKTOP)) {
         DispatchMessage (&msg);
     }
+
+    // unregister customer compositor
+    ServerUnregisterCompositor(MIME_COMPOSITOR);
 
 #ifdef USE_ANIMATION
     mGEffDeinit();

@@ -30,7 +30,7 @@
 #include "hbdinit_version.h"
 #include "hbdinit_features.h"
 
-#undef USE_ANIMATION
+#define USE_ANIMATION   1
 
 HBDINIT_EXTERN_C_BEGIN
 

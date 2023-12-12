@@ -427,8 +427,20 @@ static void draw_select_window(int index)
             w = (int)((float)w * factor);
             h = (int)((float)h * factor);
 
+            int dx = RECT_LEFT(index);
+            int dy = RECT_TOP(index);
+            int dw = RECT_RIGHT(index) - dx;
+            int dh = RECT_BOTTOM(index) - dy;
+            if (w < dw) {
+                dx += (dw - w) / 2;
+            }
+
+            if (h < dh) {
+                dy += (dh - h) / 2;
+            }
+
             StretchBlt(znodeheader->mem_dc, 0, 0, znodeheader->rc.right, znodeheader->rc.bottom, HDC_SCREEN_SYS, 
-                    RECT_LEFT(index), RECT_TOP(index), w, h, 0);
+                    dx, dy, w, h, 0);
         }
 
         // draw select rectangle
@@ -478,9 +490,22 @@ static void draw_unselect_window(int index)
             w = (int)((float)w * factor);
             h = (int)((float)h * factor);
 
+            int dx = RECT_LEFT(index);
+            int dy = RECT_TOP(index);
+            int dw = RECT_RIGHT(index) - dx;
+            int dh = RECT_BOTTOM(index) - dy;
+            if (w < dw) {
+                dx += (dw - w) / 2;
+            }
+
+            if (h < dh) {
+                dy += (dh - h) / 2;
+            }
+
+
             FillBox(HDC_SCREEN_SYS, RECT_LEFT(index), RECT_TOP(index), RECT_W(index) + 1, RECT_H(index) + 1);
             StretchBlt(znodeheader->mem_dc, 0, 0, znodeheader->rc.right, znodeheader->rc.bottom, HDC_SCREEN_SYS, 
-                                    RECT_LEFT(index), RECT_TOP(index), w, h, 0);
+                                    dx, dy, w, h, 0);
         }
     }
 }

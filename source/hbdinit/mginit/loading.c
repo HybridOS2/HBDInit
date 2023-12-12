@@ -74,6 +74,8 @@ BITMAP bmpBottom;
 HWND hLoadingWnd = HWND_INVALID;
 int animationValue = 0;
 
+#undef USE_ANIMATION
+
 #ifdef USE_ANIMATION
 int start = 100;
 int end = 0;

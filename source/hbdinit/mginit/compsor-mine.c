@@ -142,6 +142,7 @@ static MSGHOOK m_OldKeyHook = NULL;                             // keyboard hook
 static MSGHOOK m_OldExtraInputHook = NULL;                      // extra input hook function
 static void calculate_rect();                                   // function to calculate toggle window
 static HDC m_AnimationDC = NULL;                                // memory DC for start animation
+static HDC m_AnimationEndDC = NULL;                             // memory DC for end animation
 static float m_factor = 1.0;                                    // factor for input control
 
 #if 0
@@ -522,10 +523,13 @@ static void animated_start(MGEFF_ANIMATION handle, HWND hWnd, int id, RECT *valu
 
     // get the number of app in normal level
     znodeheader = ServerGetWinZNodeHeader(NULL, zidx, NULL, FALSE);
-    BitBlt(m_AnimationDC, 0, 0, g_rcScr.right, g_rcScr.bottom, HDC_SCREEN_SYS, 0, 0, 0);
+//    BitBlt(m_AnimationDC, 0, 0, g_rcScr.right, g_rcScr.bottom, HDC_SCREEN_SYS, 0, 0, 0);
 
-    SetBrushColor(HDC_SCREEN_SYS, RGBA2Pixel(m_AnimationDC, 0x00, 0x00, 0x00, 0xFF));
-    FillBox(HDC_SCREEN_SYS, rect.left, rect.top, RECTW(rect), RECTH(rect));
+//    SetBrushColor(HDC_SCREEN_SYS, RGBA2Pixel(m_AnimationDC, 0x00, 0x00, 0x00, 0xFF));
+//    FillBox(HDC_SCREEN_SYS, rect.left, rect.top, RECTW(rect), RECTH(rect));
+
+    SetBrushColor(m_AnimationDC, RGBA2Pixel(m_AnimationDC, 0x00, 0x00, 0x00, 0xFF));
+    FillBox(m_AnimationDC, 0, 0, g_rcScr.right, g_rcScr.bottom);
 
     if((RECTW(znodeheader->rc) == RECTW(g_rcScr)) && (RECTH(znodeheader->rc) == RECTH(g_rcScr)))
 
@@ -545,9 +549,12 @@ static void animated_start(MGEFF_ANIMATION handle, HWND hWnd, int id, RECT *valu
         w = (int)((float)w * factor);
         h = (int)((float)h * factor);
 
-        StretchBlt(znodeheader->mem_dc, 0, 0, znodeheader->rc.right, znodeheader->rc.bottom, HDC_SCREEN_SYS, 
+        //StretchBlt(znodeheader->mem_dc, 0, 0, znodeheader->rc.right, znodeheader->rc.bottom, HDC_SCREEN_SYS, 
+//                rect.left, rect.top, w, h, 0);
+        StretchBlt(znodeheader->mem_dc, 0, 0, znodeheader->rc.right, znodeheader->rc.bottom, m_AnimationDC, 
                 rect.left, rect.top, w, h, 0);
     }
+    BitBlt(m_AnimationDC, 0, 0, g_rcScr.right, g_rcScr.bottom, HDC_SCREEN_SYS, 0, 0, 0);
 
     SyncUpdateDC(HDC_SCREEN_SYS);
 }
@@ -1544,14 +1551,18 @@ static void animated_end(MGEFF_ANIMATION handle, HWND hWnd, int id, RECT *value)
     int zidx = ZNODE_INDEX(CUR_WIN);
     const ZNODEHEADER * znodeheader = NULL;
 
-    SetBrushColor(HDC_SCREEN_SYS, RGBA2Pixel(HDC_SCREEN_SYS, 0x00, 0x00, 0x00, 0xFF));
-    FillBox(HDC_SCREEN_SYS, rect.left, rect.top, RECTW(rect), RECTH(rect));
+    SetBrushColor(m_AnimationEndDC, RGBA2Pixel(m_AnimationDC, 0x00, 0x00, 0x00, 0xFF));
+    FillBox(m_AnimationEndDC, 0, 0, g_rcScr.right, g_rcScr.bottom);
+
+//    SetBrushColor(HDC_SCREEN_SYS, RGBA2Pixel(HDC_SCREEN_SYS, 0x00, 0x00, 0x00, 0xFF));
+//    FillBox(HDC_SCREEN_SYS, rect.left, rect.top, RECTW(rect), RECTH(rect));
 
     // get the number of app in normal level
     znodeheader = ServerGetWinZNodeHeader(NULL, zidx, NULL, FALSE);
-    if((RECTW(znodeheader->rc) == RECTW(g_rcScr)) && (RECTH(znodeheader->rc) == RECTH(g_rcScr)))
+    if((RECTW(znodeheader->rc) == RECTW(g_rcScr)) && (RECTH(znodeheader->rc) == RECTH(g_rcScr))) {
         StretchBlt(znodeheader->mem_dc, 0, 0, znodeheader->rc.right, znodeheader->rc.bottom, 
-        HDC_SCREEN_SYS, rect.left, rect.top, RECTW(rect), RECTH(rect), 0); 
+        m_AnimationEndDC, rect.left, rect.top, RECTW(rect), RECTH(rect), 0); 
+    }
     else
     {
         float factor_x = (float)RECTW(znodeheader->rc) / (float)RECTW(g_rcScr);
@@ -1566,9 +1577,10 @@ static void animated_end(MGEFF_ANIMATION handle, HWND hWnd, int id, RECT *value)
         w = (int)((float)w * factor);
         h = (int)((float)h * factor);
 
-        StretchBlt(znodeheader->mem_dc, 0, 0, znodeheader->rc.right, znodeheader->rc.bottom, HDC_SCREEN_SYS, 
+        StretchBlt(znodeheader->mem_dc, 0, 0, znodeheader->rc.right, znodeheader->rc.bottom, m_AnimationEndDC, 
                 rect.left, rect.top, w, h, 0);
     }
+    BitBlt(m_AnimationEndDC, 0, 0, g_rcScr.right, g_rcScr.bottom, HDC_SCREEN_SYS, 0, 0, 0);
     SyncUpdateDC(HDC_SCREEN_SYS);
 }
 
@@ -1639,6 +1651,8 @@ static int MouseHook(void* context, HWND dst_wnd, UINT msg, WPARAM wparam, LPARA
                 // set current window for animation
                 m_fallback_toggle_ctxt.current_window = i;
 
+                m_AnimationEndDC = CreateMemDC(g_rcScr.right, g_rcScr.bottom, 32, MEMDC_FLAG_SWSURFACE,
+                    0x00000000, 0x00000000, 0x00000000, 0x00000000);
                 // animation
                 animation = mGEffAnimationCreate(NULL, (void *)animated_end, 1, MGEFF_RECT);
                 if (animation) 
@@ -1656,6 +1670,9 @@ static int MouseHook(void* context, HWND dst_wnd, UINT msg, WPARAM wparam, LPARA
                     mGEffAnimationSyncRun(animation);
                     mGEffAnimationDelete(animation);
                 }
+                SetBrushColor(HDC_SCREEN_SYS, RGBA2Pixel(m_AnimationDC, 0x00, 0x00, 0x00, 0xFF));
+                FillBox(HDC_SCREEN_SYS, 0, 0, g_rcScr.right, g_rcScr.bottom);
+                DeleteMemDC(m_AnimationEndDC);
 
                 // set this main window to the top
                 ServerDoZNodeOperation(NULL, znode_index, ZNOP_MOVE2TOP, NULL, FALSE);
@@ -1753,6 +1770,8 @@ static int KeyHook(void* context, HWND dst_wnd, UINT msg, WPARAM wparam, LPARAM 
                 return HOOK_STOP;
             case SCANCODE_ENTER:
                 // animation
+                m_AnimationEndDC = CreateMemDC(g_rcScr.right, g_rcScr.bottom, 32, MEMDC_FLAG_SWSURFACE,
+                    0x00000000, 0x00000000, 0x00000000, 0x00000000);
                 animation = mGEffAnimationCreate(NULL, (void *)animated_end, 1, MGEFF_RECT);
                 if (animation) 
                 {
@@ -1773,6 +1792,9 @@ static int KeyHook(void* context, HWND dst_wnd, UINT msg, WPARAM wparam, LPARAM 
                     mGEffAnimationSyncRun(animation);
                     mGEffAnimationDelete(animation);
                 }
+                SetBrushColor(HDC_SCREEN_SYS, RGBA2Pixel(m_AnimationDC, 0x00, 0x00, 0x00, 0xFF));
+                FillBox(HDC_SCREEN_SYS, 0, 0, g_rcScr.right, g_rcScr.bottom);
+                DeleteMemDC(m_AnimationEndDC);
 
                 znode_index = ZNODE_INDEX(CUR_WIN);
                 ServerDoZNodeOperation(NULL, znode_index, ZNOP_MOVE2TOP, NULL, FALSE);
